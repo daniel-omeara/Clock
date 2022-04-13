@@ -1,4 +1,4 @@
-package com.danielomeara.clock.ui.theme
+package com.danielomeara.clock.core.ui.theme
 
 import androidx.compose.material.Typography
 import androidx.compose.ui.text.TextStyle
