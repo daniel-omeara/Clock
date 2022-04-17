@@ -1,4 +1,4 @@
-package com.danielomeara.clock
+package com.danielomeara.clock.features
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
