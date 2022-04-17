@@ -1,20 +1,19 @@
 package com.danielomeara.clock.features.timer.presentation
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.danielomeara.clock.core.util.rememberWindowInfo
 import com.danielomeara.clock.features.timer.domain.viewmodel.TimerViewModel
-import com.danielomeara.clock.features.timer.presentation.components.RoundSlider
-import com.danielomeara.clock.features.timer.presentation.components.TimerActionButtons
-import com.danielomeara.clock.features.timer.presentation.components.TimerView
+import com.danielomeara.clock.features.timer.presentation.components.actionbuttons.ActionButtonsView
+import com.danielomeara.clock.features.timer.presentation.components.actionbuttons.TimerActionButtons
+import com.danielomeara.clock.features.timer.presentation.components.timer.TimerView
 import com.danielomeara.clock.features.timer.presentation.util.TimerEvent
 
 @Composable
@@ -23,72 +22,70 @@ fun TimerScreen(
 ) {
     val enabledButtons = timerViewModel.enabledButtons.value
 
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceEvenly
-    ) {
-        if(enabledButtons.isInTimerSetMode) {
-            val angle = remember {
-                mutableStateOf(0.0)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                timerViewModel.onEvent(TimerEvent.InitTimer)
+            } else if (event == Lifecycle.Event.ON_PAUSE) {
+                timerViewModel.onEvent(TimerEvent.SaveTimer)
             }
-            val timerText = (angle.value / 6.0).toInt().toString()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Button(onClick = { /*TODO*/ }) {
-                    Text("Hours")
-                }
-
-                Button(onClick = { /*TODO*/ }) {
-                    Text("Minutes")
-                }
-
-                Button(onClick = { /*TODO*/ }) {
-                    Text("Seconds")
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.50f),
-                contentAlignment = Alignment.Center
-            ) {
-                RoundSlider(
-                    angle
+    val windowInfo = rememberWindowInfo()
+    when(windowInfo.orientation) {
+        Configuration.ORIENTATION_PORTRAIT -> {
+            Column {
+                TimerView(
+                    modifier = Modifier.weight(0.8f),
+                    timer = timerViewModel.timer.value,
+                    isInTimerSetMode = enabledButtons.isInTimerSetMode,
+                    currentSelectedTimerValue = timerViewModel.currentSelectedTimerValue.value,
+                    setTimerValueClicked = { timerViewModel.onEvent(TimerEvent.TimerValueClicked(it)) },
+                    sliderValue = if(enabledButtons.isInTimerSetMode) timerViewModel.sliderValue.value else timerViewModel.timerProgress.value,
+                    onSelectedTimerValueChange = { timerViewModel.onEvent(TimerEvent.SelectedTimerValueChanged(it)) }
                 )
-
-
-                Text(
-                    text = "00:00:$timerText",
-                    style = MaterialTheme.typography.h5
-                )
-            }
-            FloatingActionButton(
-                onClick = {
-                    if(enabledButtons.isPlayEnabled) {
-                        timerViewModel.onEvent(TimerEvent.StartTimer)
+                ActionButtonsView(
+                    modifier = Modifier.weight(0.2f),
+                    content = {
+                        TimerActionButtons(
+                            enabledButtons = enabledButtons,
+                            startTimerClicked = { timerViewModel.onEvent(TimerEvent.StartTimer) },
+                            pauseTimerClicked = { timerViewModel.onEvent(TimerEvent.PauseTimer) },
+                            stopTimerClicked = { timerViewModel.onEvent(TimerEvent.StopTimer) }
+                        )
                     }
-                },
-                backgroundColor = if(enabledButtons.isPlayEnabled) MaterialTheme.colors.secondary else Color.Gray
-            ) {
-                Icon(Icons.Default.PlayArrow, "")
+                )
             }
-        } else {
-            TimerView(
-                timerProgress = timerViewModel.timerProgress.value,
-                timerText = timerViewModel.timerText.value
-            )
-
-            TimerActionButtons(
-                enabledButtons = enabledButtons,
-                startTimerClicked = { timerViewModel.onEvent(TimerEvent.StartTimer) },
-                pauseTimerClicked = { timerViewModel.onEvent(TimerEvent.PauseTimer) },
-                stopTimerClicked = { timerViewModel.onEvent(TimerEvent.StopTimer) }
-            )
+        }
+        Configuration.ORIENTATION_LANDSCAPE -> {
+            Row {
+                TimerView(
+                    modifier = Modifier.weight(0.8f),
+                    timer = timerViewModel.timer.value,
+                    isInTimerSetMode = enabledButtons.isInTimerSetMode,
+                    currentSelectedTimerValue = timerViewModel.currentSelectedTimerValue.value,
+                    setTimerValueClicked = { timerViewModel.onEvent(TimerEvent.TimerValueClicked(it)) },
+                    sliderValue = if(enabledButtons.isInTimerSetMode) timerViewModel.sliderValue.value else timerViewModel.timerProgress.value,
+                    onSelectedTimerValueChange = { timerViewModel.onEvent(TimerEvent.SelectedTimerValueChanged(it)) }
+                )
+                ActionButtonsView(
+                    modifier = Modifier.weight(0.2f),
+                    content = {
+                        TimerActionButtons(
+                            enabledButtons = enabledButtons,
+                            startTimerClicked = { timerViewModel.onEvent(TimerEvent.StartTimer) },
+                            pauseTimerClicked = { timerViewModel.onEvent(TimerEvent.PauseTimer) },
+                            stopTimerClicked = { timerViewModel.onEvent(TimerEvent.StopTimer) }
+                        )
+                    }
+                )
+            }
         }
     }
 }

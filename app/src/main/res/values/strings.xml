@@ -2,4 +2,8 @@
     <string name="app_name">Clock</string>
     <string name="timer">Timer</string>
     <string name="stopwatch">Stopwatch</string>
+    <string name="start_timer_text">Start timer</string>
+    <string name="timer_action_button_play_content_desc">Start timer</string>
+    <string name="timer_action_button_pause_content_desc">Pause timer</string>
+    <string name="timer_action_button_stop_content_desc">Stop timer</string>
 </resources>
